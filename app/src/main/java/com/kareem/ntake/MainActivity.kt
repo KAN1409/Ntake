@@ -4,6 +4,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.MediaRecorder
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -33,7 +34,7 @@ import java.util.Date
 private val Ink=Color(0xFF071017);private val Surface=Color(0xFF101B24);private val Surface2=Color(0xFF162632);private val Mint=Color(0xFF6FE1D0);private val Violet=Color(0xFF9A7CFF);private val Blue=Color(0xFF5C8DFF);private val Warm=Color(0xFFFFB86B)
 class MainActivity:ComponentActivity(){private var recorder:MediaRecorder?=null
  override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);setContent{NtakeTheme{NtakeAppUi((application as NtakeApp).repo,this)}}}
- fun startRecording():File{val f=File(filesDir,"voice_"+System.currentTimeMillis()+".m4a");recorder=MediaRecorder(this).apply{setAudioSource(MediaRecorder.AudioSource.MIC);setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);setAudioEncoder(MediaRecorder.AudioEncoder.AAC);setOutputFile(f.absolutePath);prepare();start()};return f}
+ fun startRecording():File{val f=File(filesDir,"voice_"+System.currentTimeMillis()+".m4a");recorder=(if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.S) MediaRecorder(this) else @Suppress("DEPRECATION") MediaRecorder()).apply{setAudioSource(MediaRecorder.AudioSource.MIC);setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);setAudioEncoder(MediaRecorder.AudioEncoder.AAC);setOutputFile(f.absolutePath);prepare();start()};return f}
  fun stopRecording(){runCatching{recorder?.stop()};recorder?.release();recorder=null}}
 @Composable fun NtakeTheme(content: @Composable () -> Unit){MaterialTheme(colorScheme=darkColorScheme(primary=Mint,secondary=Violet,background=Ink,surface=Surface,onBackground=Color(0xFFF4F7FA),onSurface=Color(0xFFF4F7FA)),content=content)}
 @Composable fun NtakeAppUi(repo:NoteRepository,activity:MainActivity){val notes by repo.notes.collectAsStateWithLifecycle();var tab by remember{mutableStateOf("home")};var capture by remember{mutableStateOf<String?>(activity.intent.getStringExtra("capture"))};var selected by remember{mutableStateOf<Note?>(null)};val shared=remember{activity.intent.getStringExtra(Intent.EXTRA_TEXT)}
