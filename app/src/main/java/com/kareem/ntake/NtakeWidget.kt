@@ -1,0 +1,3 @@
+package com.kareem.ntake
+import android.app.*;import android.appwidget.*;import android.content.*;import android.widget.RemoteViews
+class NtakeWidget:AppWidgetProvider(){override fun onUpdate(c:Context,m:AppWidgetManager,ids:IntArray){ids.forEach{id->val v=RemoteViews(c.packageName,R.layout.widget_ntake);fun pi(mode:String,code:Int)=PendingIntent.getActivity(c,code,Intent(c,MainActivity::class.java).putExtra("capture",mode),PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE);v.setOnClickPendingIntent(R.id.w_note,pi("text",1));v.setOnClickPendingIntent(R.id.w_voice,pi("voice",2));v.setOnClickPendingIntent(R.id.w_scan,pi("image",3));m.updateAppWidget(id,v)}}}
