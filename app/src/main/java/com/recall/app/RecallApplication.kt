@@ -12,32 +12,23 @@ import javax.inject.Inject
 @HiltAndroidApp
 class RecallApplication : Application(), Configuration.Provider {
 
-    @Inject
-    lateinit var workerFactory: HiltWorkerFactory
-
-    @Inject
-    lateinit var syncScheduler: SyncScheduler
-
-    @Inject
-    lateinit var analyticsManager: AnalyticsManager
+    @Inject lateinit var workerFactory: HiltWorkerFactory
+    @Inject lateinit var syncScheduler: SyncScheduler
+    @Inject lateinit var analyticsManager: AnalyticsManager
 
     override fun onCreate() {
         super.onCreate()
+        if (BuildConfig.DEBUG) Timber.plant(Timber.DebugTree())
 
-        // Initialize Timber for logging
-        if (BuildConfig.DEBUG) {
-            Timber.plant(Timber.DebugTree())
-        }
+        // Startup must never take the whole app down. Optional services are
+        // best-effort; the local Room/Compose experience remains available.
+        runCatching { analyticsManager.initialize() }
+            .onFailure { Timber.e(it, "Analytics initialization skipped") }
+
+        runCatching { syncScheduler.scheduleNightlyResurfacing() }
+            .onFailure { Timber.e(it, "Nightly resurfacing scheduling skipped") }
 
         Timber.d("Recall application started")
-
-        // Initialize analytics and crash reporting
-        analyticsManager.initialize()
-        Timber.d("Analytics initialized")
-
-        // Schedule nightly resurface score calculation
-        syncScheduler.scheduleNightlyResurfacing()
-        Timber.d("Nightly resurfacing scheduled")
     }
 
     override val workManagerConfiguration: Configuration
