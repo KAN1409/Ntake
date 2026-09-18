@@ -4,6 +4,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import android.content.Context
 import androidx.work.*
 import com.recall.app.core.util.Constants
+import com.recall.app.core.config.SupabaseConfig
 import com.recall.app.sync.workers.ProcessAiWorker
 import com.recall.app.sync.workers.ResurfaceScoreWorker
 import com.recall.app.sync.workers.SyncNotesWorker
@@ -25,6 +26,11 @@ class SyncScheduler @Inject constructor(
      * Upload Attachments → Sync Notes → Process AI
      */
     fun scheduleSyncChain() {
+        // Local-first builds must not enqueue remote workers against placeholder credentials.
+        if (!SupabaseConfig.isConfigured()) {
+            Timber.d("Supabase not configured; keeping note local and skipping sync chain")
+            return
+        }
         val uploadAttachmentsWork = OneTimeWorkRequestBuilder<UploadAttachmentsWorker>()
             .setConstraints(getSyncConstraints())
             .setBackoffCriteria(
@@ -69,6 +75,10 @@ class SyncScheduler @Inject constructor(
      * Schedule periodic sync (every 15 minutes when conditions are met)
      */
     fun schedulePeriodicSync() {
+        if (!SupabaseConfig.isConfigured()) {
+            Timber.d("Supabase not configured; skipping periodic sync")
+            return
+        }
         val periodicSyncWork = PeriodicWorkRequestBuilder<SyncNotesWorker>(
             15, TimeUnit.MINUTES
         )
